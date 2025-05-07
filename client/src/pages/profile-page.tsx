@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
@@ -162,15 +162,8 @@ export default function ProfilePage() {
                 </TabsContent>
                 
                 <TabsContent value="in-progress">
-                  {/* Add debugging in the browser console */}
-                  {console.log("All sessions:", sessions)}
-                  {console.log("In progress sessions:", sessions?.filter(s => s.completedAt === null && s.progressType))}
                   {renderSessions(
-                    sessions?.filter(s => {
-                      // Log each session for debugging
-                      console.log("Session:", s.id, "topic:", s.topic, "progressType:", s.progressType);
-                      return s.completedAt === null && s.progressType;
-                    }),
+                    sessions?.filter(s => s.completedAt === null),
                     isLoading,
                     handleRetakeTopic,
                     true
@@ -256,27 +249,40 @@ function renderSessions(
                   </div>
                 )}
                 
-                {session.progressType && (
+                {/* Only completed sessions won't have this indicator */}
+                {session.completedAt === null && (
                   <div className="flex items-center gap-1 mt-1 px-3 py-1.5 rounded-md bg-amber-50 border border-amber-200">
-                    {session.progressType === "flashcards" 
-                      ? <BookOpen size={14} className="text-amber-700" />
-                      : <CheckCircle size={14} className="text-amber-700" />
-                    }
+                    {session.progressType ? (
+                      session.progressType === "flashcards" 
+                        ? <BookOpen size={14} className="text-amber-700" />
+                        : <CheckCircle size={14} className="text-amber-700" />
+                    ) : (
+                      <Clock size={14} className="text-amber-700" />
+                    )}
                     <span className="font-medium text-amber-700">
-                      {session.progressType === "flashcards" 
-                        ? "Pending: Flashcard Learning" 
-                        : "Pending: Quiz Completion"}
-                      {session.progressIndex !== undefined && session.progressIndex !== null ? 
+                      {session.progressType 
+                        ? (
+                            session.progressType === "flashcards" 
+                              ? "Pending: Flashcard Learning" 
+                              : "Pending: Quiz Completion"
+                          )
+                        : "Pending: Not Started"
+                      }
+                      {session.progressType && session.progressIndex !== undefined && session.progressIndex !== null ? 
                         ` (${session.progressIndex + 1} of ${session.progressType === "flashcards" ? "10" : "5"})` : 
-                        " (In Progress)"}
+                        ""}
                     </span>
                   </div>
                 )}
               </div>
             </div>
             
-            <Button onClick={() => handleRetakeTopic(session.id)}>
-              {session.progressType ? 'Continue' : 'Retake'}
+            <Button 
+              onClick={() => handleRetakeTopic(session.id)}
+              variant={session.progressType ? "default" : "outline"}
+              className={session.progressType ? "bg-blue-600 hover:bg-blue-700" : ""}
+            >
+              {session.completedAt ? 'Retake' : (session.progressType ? 'Continue' : 'Start')}
             </Button>
           </div>
         </div>
