@@ -55,13 +55,13 @@ export default function LearnSessionPage() {
       const { session } = sessionData;
       
       // Check if session is in progress
-      if (session.progressType && session.progressIndex !== null) {
+      if (session.progressType && session.progressIndex !== null && session.progressIndex !== undefined) {
         // Handle in-progress session
         if (session.progressType === "flashcards") {
-          setCurrentFlashcardIndex(session.progressIndex);
+          setCurrentFlashcardIndex(Number(session.progressIndex));
           setViewState("flashcard");
         } else if (session.progressType === "mcq") {
-          setCurrentMcqIndex(session.progressIndex);
+          setCurrentMcqIndex(Number(session.progressIndex));
           
           // If there's progressData, try to restore answers and timer
           if (session.progressData) {

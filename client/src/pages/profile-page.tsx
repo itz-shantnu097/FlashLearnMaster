@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, LogOut, BookOpen, Clock, AlertCircle, CheckCircle } from "lucide-react";
+import { User, LogOut, BookOpen, Clock, AlertCircle, CheckCircle, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -47,6 +47,19 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto p-4 py-8 max-w-6xl">
+      <div className="mb-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Your Learning Dashboard</h1>
+        <div className="flex space-x-4">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2"
+          >
+            <Home size={16} />
+            <span>Back to Home</span>
+          </Button>
+        </div>
+      </div>
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar - User info */}
         <div className="w-full md:w-1/3">
@@ -239,8 +252,10 @@ function renderSessions(
                 {session.progressType && (
                   <div className="flex items-center gap-1">
                     <BookOpen size={14} />
-                    <span>
-                      {session.progressType === "flashcards" ? "Flashcards" : "Quiz"}: 
+                    <span className="font-medium text-amber-700">
+                      {session.progressType === "flashcards" 
+                        ? "Pending: Flashcard Learning" 
+                        : "Pending: Quiz Completion"}: 
                       {session.progressIndex !== undefined && session.progressIndex !== null ? 
                         ` ${session.progressIndex + 1} of ${session.progressType === "flashcards" ? "10" : "5"}` : 
                         " In Progress"}
