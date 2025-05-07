@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import ShareProgress from "@/components/ShareProgress";
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
