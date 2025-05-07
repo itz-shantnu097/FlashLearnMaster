@@ -8,13 +8,15 @@ interface FlashcardViewProps {
   currentIndex: number;
   topic: string;
   onNext: () => void;
+  onSaveForLater: () => void;
 }
 
 export default function FlashcardView({ 
   flashcards, 
   currentIndex, 
   topic, 
-  onNext 
+  onNext,
+  onSaveForLater
 }: FlashcardViewProps) {
   const currentCard = flashcards[currentIndex];
 
@@ -66,10 +68,17 @@ export default function FlashcardView({
         </div>
       </motion.div>
       
-      <div className="flex justify-center">
+      <div className="flex justify-center space-x-4">
+        <Button 
+          onClick={onSaveForLater}
+          variant="outline"
+          className="px-6 py-3 font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+        >
+          Save for Later
+        </Button>
         <Button 
           onClick={onNext}
-          className="px-8 py-3 bg-primary hover:bg-primary-hover text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          className="px-6 py-3 bg-primary hover:bg-primary-hover text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
         >
           Continue
         </Button>

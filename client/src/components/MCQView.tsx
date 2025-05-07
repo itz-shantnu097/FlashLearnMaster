@@ -14,6 +14,7 @@ interface MCQViewProps {
   initialTime: number;
   onTimeUpdate: (time: number) => void;
   onTimeEnd: () => void;
+  onSaveForLater: () => void;
 }
 
 export default function MCQView({
@@ -22,7 +23,8 @@ export default function MCQView({
   onSubmit,
   initialTime,
   onTimeUpdate,
-  onTimeEnd
+  onTimeEnd,
+  onSaveForLater
 }: MCQViewProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(initialTime);
@@ -127,11 +129,18 @@ export default function MCQView({
         </Card>
       </motion.div>
       
-      <div className="flex justify-center">
+      <div className="flex justify-center space-x-4">
+        <Button 
+          onClick={onSaveForLater}
+          variant="outline"
+          className="px-6 py-3 font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+        >
+          Take Quiz Later
+        </Button>
         <Button 
           onClick={handleSubmit}
           disabled={selectedAnswer === null}
-          className="px-8 py-3 bg-primary hover:bg-primary-hover text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-primary hover:bg-primary-hover text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Submit Answer
         </Button>

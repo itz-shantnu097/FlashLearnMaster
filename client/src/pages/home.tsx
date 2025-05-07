@@ -150,6 +150,48 @@ export default function Home() {
   const updateTimer = (newTime: number) => {
     setTimeRemaining(newTime);
   };
+  
+  // Handler for saving flashcard progress for later
+  const handleSaveFlashcardsForLater = async () => {
+    if (!sessionId) return;
+    
+    try {
+      // Save progress to the database
+      await apiRequest("POST", "/api/learning/save-progress", {
+        sessionId,
+        type: "flashcards",
+        currentIndex: currentFlashcardIndex,
+        topic
+      });
+      
+      // Redirect to profile/dashboard
+      navigate("/profile");
+    } catch (error) {
+      console.error("Failed to save progress:", error);
+    }
+  };
+  
+  // Handler for saving MCQ progress for later
+  const handleSaveMCQForLater = async () => {
+    if (!sessionId) return;
+    
+    try {
+      // Save progress to the database
+      await apiRequest("POST", "/api/learning/save-progress", {
+        sessionId,
+        type: "mcq",
+        currentIndex: currentMcqIndex,
+        answers: selectedAnswers,
+        timeRemaining,
+        topic
+      });
+      
+      // Redirect to profile/dashboard
+      navigate("/profile");
+    } catch (error) {
+      console.error("Failed to save progress:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
