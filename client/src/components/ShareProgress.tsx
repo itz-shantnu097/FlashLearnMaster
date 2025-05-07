@@ -64,18 +64,42 @@ export default function ShareProgress({
   const iconSize = variant === 'icon' ? 32 : 48;
   const iconRadius = 8;
 
+  // Function to handle icon button click
+  const handleIconClick = () => {
+    setOpen(true);
+  };
+
   return (
     <>
       {variant === 'icon' ? (
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => setOpen(true)}
-          className={className} 
-          title="Share your progress"
-        >
-          <Share2 size={18} />
-        </Button>
+        <>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={handleIconClick}
+            className={className} 
+            title="Share your progress"
+          >
+            <Share2 size={18} />
+          </Button>
+
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent className="sm:max-w-md">
+              <ShareContent 
+                topic={topic}
+                score={score}
+                isCompleted={isCompleted}
+                title={title}
+                twitterTitle={twitterTitle}
+                shareUrl={shareUrl}
+                hashtags={hashtags}
+                iconSize={iconSize}
+                iconRadius={iconRadius}
+                copyToClipboard={copyToClipboard}
+              />
+            </DialogContent>
+          </Dialog>
+        </>
       ) : (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -88,96 +112,140 @@ export default function ShareProgress({
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Share your learning progress</DialogTitle>
-            </DialogHeader>
-            <div className="flex flex-col gap-4">
-              <div className="bg-slate-50 p-4 rounded-lg border">
-                <h3 className="font-medium mb-1">Topic: {topic}</h3>
-                {isCompleted ? (
-                  <p className="text-sm flex items-center gap-1 text-green-600">
-                    <Check size={16} /> Completed with score: {score}%
-                  </p>
-                ) : (
-                  <p className="text-sm flex items-center gap-1 text-blue-600">
-                    <ArrowRight size={16} /> In progress
-                  </p>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-5 gap-4 py-2">
-                <div className="flex flex-col items-center gap-1">
-                  <FacebookShareButton
-                    url={shareUrl}
-                    hashtag={hashtags[0]}
-                    className="transition-transform hover:scale-110"
-                  >
-                    <FacebookIcon size={iconSize} round={Boolean(iconRadius)} borderRadius={iconRadius} />
-                    <span className="text-xs mt-1">Facebook</span>
-                  </FacebookShareButton>
-                </div>
-                
-                <div className="flex flex-col items-center gap-1">
-                  <TwitterShareButton
-                    url={shareUrl}
-                    title={twitterTitle}
-                    hashtags={hashtags}
-                    className="transition-transform hover:scale-110"
-                  >
-                    <TwitterIcon size={iconSize} round={Boolean(iconRadius)} borderRadius={iconRadius} />
-                    <span className="text-xs mt-1">Twitter</span>
-                  </TwitterShareButton>
-                </div>
-                
-                <div className="flex flex-col items-center gap-1">
-                  <LinkedinShareButton
-                    url={shareUrl}
-                    title={`Learning Progress: ${topic}`}
-                    className="transition-transform hover:scale-110"
-                  >
-                    <LinkedinIcon size={iconSize} round={Boolean(iconRadius)} borderRadius={iconRadius} />
-                    <span className="text-xs mt-1">LinkedIn</span>
-                  </LinkedinShareButton>
-                </div>
-                
-                <div className="flex flex-col items-center gap-1">
-                  <WhatsappShareButton
-                    url={shareUrl}
-                    title={title}
-                    separator=" - "
-                    className="transition-transform hover:scale-110"
-                  >
-                    <WhatsappIcon size={iconSize} round={Boolean(iconRadius)} borderRadius={iconRadius} />
-                    <span className="text-xs mt-1">WhatsApp</span>
-                  </WhatsappShareButton>
-                </div>
-                
-                <div className="flex flex-col items-center gap-1">
-                  <TelegramShareButton
-                    url={shareUrl}
-                    title={title}
-                    className="transition-transform hover:scale-110"
-                  >
-                    <TelegramIcon size={iconSize} round={Boolean(iconRadius)} borderRadius={iconRadius} />
-                    <span className="text-xs mt-1">Telegram</span>
-                  </TelegramShareButton>
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center mt-2">
-                <Button variant="outline" onClick={copyToClipboard}>
-                  Copy Link
-                </Button>
-                <DialogClose asChild>
-                  <Button variant="ghost" size="sm">
-                    Close
-                  </Button>
-                </DialogClose>
-              </div>
-            </div>
+            <ShareContent 
+              topic={topic}
+              score={score}
+              isCompleted={isCompleted}
+              title={title}
+              twitterTitle={twitterTitle}
+              shareUrl={shareUrl}
+              hashtags={hashtags}
+              iconSize={iconSize}
+              iconRadius={iconRadius}
+              copyToClipboard={copyToClipboard}
+            />
           </DialogContent>
         </Dialog>
       )}
+    </>
+  );
+}
+
+// Extracted the content to a separate component to avoid duplication
+interface ShareContentProps {
+  topic: string;
+  score: number | null;
+  isCompleted: boolean;
+  title: string;
+  twitterTitle: string;
+  shareUrl: string;
+  hashtags: string[];
+  iconSize: number;
+  iconRadius: number;
+  copyToClipboard: () => void;
+}
+
+function ShareContent({
+  topic,
+  score,
+  isCompleted,
+  title,
+  twitterTitle,
+  shareUrl,
+  hashtags,
+  iconSize,
+  iconRadius,
+  copyToClipboard
+}: ShareContentProps) {
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Share your learning progress</DialogTitle>
+      </DialogHeader>
+      <div className="flex flex-col gap-4">
+        <div className="bg-slate-50 p-4 rounded-lg border">
+          <h3 className="font-medium mb-1">Topic: {topic}</h3>
+          {isCompleted ? (
+            <p className="text-sm flex items-center gap-1 text-green-600">
+              <Check size={16} /> Completed with score: {score}%
+            </p>
+          ) : (
+            <p className="text-sm flex items-center gap-1 text-blue-600">
+              <ArrowRight size={16} /> In progress
+            </p>
+          )}
+        </div>
+        
+        <div className="grid grid-cols-5 gap-4 py-2">
+          <div className="flex flex-col items-center gap-1">
+            <FacebookShareButton
+              url={shareUrl}
+              hashtag={hashtags[0]}
+              className="transition-transform hover:scale-110"
+            >
+              <FacebookIcon size={iconSize} round={Boolean(iconRadius)} borderRadius={iconRadius} />
+              <span className="text-xs mt-1">Facebook</span>
+            </FacebookShareButton>
+          </div>
+          
+          <div className="flex flex-col items-center gap-1">
+            <TwitterShareButton
+              url={shareUrl}
+              title={twitterTitle}
+              hashtags={hashtags}
+              className="transition-transform hover:scale-110"
+            >
+              <TwitterIcon size={iconSize} round={Boolean(iconRadius)} borderRadius={iconRadius} />
+              <span className="text-xs mt-1">Twitter</span>
+            </TwitterShareButton>
+          </div>
+          
+          <div className="flex flex-col items-center gap-1">
+            <LinkedinShareButton
+              url={shareUrl}
+              title={`Learning Progress: ${topic}`}
+              className="transition-transform hover:scale-110"
+            >
+              <LinkedinIcon size={iconSize} round={Boolean(iconRadius)} borderRadius={iconRadius} />
+              <span className="text-xs mt-1">LinkedIn</span>
+            </LinkedinShareButton>
+          </div>
+          
+          <div className="flex flex-col items-center gap-1">
+            <WhatsappShareButton
+              url={shareUrl}
+              title={title}
+              separator=" - "
+              className="transition-transform hover:scale-110"
+            >
+              <WhatsappIcon size={iconSize} round={Boolean(iconRadius)} borderRadius={iconRadius} />
+              <span className="text-xs mt-1">WhatsApp</span>
+            </WhatsappShareButton>
+          </div>
+          
+          <div className="flex flex-col items-center gap-1">
+            <TelegramShareButton
+              url={shareUrl}
+              title={title}
+              className="transition-transform hover:scale-110"
+            >
+              <TelegramIcon size={iconSize} round={Boolean(iconRadius)} borderRadius={iconRadius} />
+              <span className="text-xs mt-1">Telegram</span>
+            </TelegramShareButton>
+          </div>
+        </div>
+        
+        <div className="flex justify-between items-center mt-2">
+          <Button variant="outline" onClick={copyToClipboard}>
+            Copy Link
+          </Button>
+          <DialogClose asChild>
+            <Button variant="ghost" size="sm">
+              Close
+            </Button>
+          </DialogClose>
+        </div>
+      </div>
     </>
   );
 }
