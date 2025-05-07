@@ -21,6 +21,7 @@ export default function Home() {
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [resultsData, setResultsData] = useState<LearningResult | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [usingSampleData, setUsingSampleData] = useState(false);
 
   const handleTopicSubmit = async (inputTopic: string) => {
     setTopic(inputTopic);
@@ -32,6 +33,7 @@ export default function Home() {
       
       setFlashcards(data.flashcards);
       setMcqs(data.mcqs);
+      setUsingSampleData(!!data.usingSampleData); // Set the flag based on API response
       setCurrentFlashcardIndex(0);
       setViewState("flashcard");
     } catch (error) {
@@ -68,6 +70,7 @@ export default function Home() {
           topic,
           mcqs,
           selectedAnswers: newSelectedAnswers,
+          usingSampleData  // Pass the flag to the API
         });
         
         const results = await response.json();
