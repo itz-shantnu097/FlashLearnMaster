@@ -84,6 +84,69 @@ export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
 
+// Categories for organizing topics
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  iconName: text("icon_name"),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Learning paths - sequences of related topics
+export const learningPaths = pgTable("learning_paths", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  difficulty: text("difficulty").default("beginner"), // beginner, intermediate, advanced
+  estimatedHours: integer("estimated_hours"),
+  categoryId: integer("category_id").references(() => categories.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  isPublished: boolean("is_published").default(false),
+  coverImageUrl: text("cover_image_url"),
+  authorId: integer("author_id").references(() => users.id),
+});
+
+// Path steps - individual topics within a learning path in sequence
+export const pathSteps = pgTable("path_steps", {
+  id: serial("id").primaryKey(),
+  pathId: integer("path_id").notNull().references(() => learningPaths.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  topicName: text("topic_name").notNull(),
+  stepOrder: integer("step_order").notNull(),
+  isRequired: boolean("is_required").default(true),
+  estimatedMinutes: integer("estimated_minutes").default(30),
+});
+
+// Topics that are pre-defined in the system
+export const topics = pgTable("topics", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  categoryId: integer("category_id").references(() => categories.id),
+  difficulty: text("difficulty").default("medium"), // easy, medium, hard
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  popularity: integer("popularity").default(0),
+  keywords: text("keywords"),
+});
+
+// User progress for learning paths
+export const pathProgress = pgTable("path_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  pathId: integer("path_id").notNull().references(() => learningPaths.id),
+  currentStepId: integer("current_step_id").references(() => pathSteps.id),
+  isCompleted: boolean("is_completed").default(false),
+  progress: integer("progress").default(0), // percentage of completion
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  completedAt: timestamp("completed_at"),
+});
+
 // Learning Sessions table
 export const learningSessions = pgTable("learning_sessions", {
   id: varchar("id", { length: 36 }).primaryKey(),
@@ -96,6 +159,11 @@ export const learningSessions = pgTable("learning_sessions", {
   progressType: varchar("progress_type", { length: 20 }), // "flashcards" or "mcq"
   progressIndex: integer("progress_index"), // Current flashcard or MCQ index
   progressData: text("progress_data"), // JSON string with additional progress data
+  // References to categories and learning paths
+  categoryId: integer("category_id").references(() => categories.id),
+  pathId: integer("path_id").references(() => learningPaths.id),
+  pathStepId: integer("path_step_id").references(() => pathSteps.id),
+  difficulty: text("difficulty").default("medium"),
 });
 
 // Flashcards table
@@ -119,7 +187,9 @@ export const mcqs = pgTable("mcqs", {
 export const usersRelations = relations(users, ({ many }) => ({
   learningSessions: many(learningSessions),
   preferences: many(userPreferences),
-  achievements: many(userAchievements)
+  achievements: many(userAchievements),
+  authoredPaths: many(learningPaths, { relationName: "author" }),
+  pathProgress: many(pathProgress)
 }));
 
 export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
@@ -136,6 +206,61 @@ export const userAchievementsRelations = relations(userAchievements, ({ one }) =
   }),
 }));
 
+// Category relations
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  topics: many(topics),
+  learningPaths: many(learningPaths),
+  learningSessions: many(learningSessions)
+}));
+
+// Learning paths relations
+export const learningPathsRelations = relations(learningPaths, ({ many, one }) => ({
+  steps: many(pathSteps),
+  progressEntries: many(pathProgress),
+  category: one(categories, {
+    fields: [learningPaths.categoryId],
+    references: [categories.id]
+  }),
+  author: one(users, {
+    fields: [learningPaths.authorId],
+    references: [users.id]
+  }),
+  learningSessions: many(learningSessions)
+}));
+
+// Path steps relations
+export const pathStepsRelations = relations(pathSteps, ({ one, many }) => ({
+  path: one(learningPaths, {
+    fields: [pathSteps.pathId],
+    references: [learningPaths.id]
+  }),
+  pathProgress: many(pathProgress)
+}));
+
+// Topic relations
+export const topicsRelations = relations(topics, ({ one }) => ({
+  category: one(categories, {
+    fields: [topics.categoryId],
+    references: [categories.id]
+  })
+}));
+
+// Path progress relations
+export const pathProgressRelations = relations(pathProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [pathProgress.userId],
+    references: [users.id]
+  }),
+  path: one(learningPaths, {
+    fields: [pathProgress.pathId],
+    references: [learningPaths.id]
+  }),
+  currentStep: one(pathSteps, {
+    fields: [pathProgress.currentStepId],
+    references: [pathSteps.id]
+  })
+}));
+
 export const learningSessionsRelations = relations(learningSessions, ({ many, one }) => ({
   flashcards: many(flashcards),
   mcqs: many(mcqs),
@@ -143,6 +268,18 @@ export const learningSessionsRelations = relations(learningSessions, ({ many, on
     fields: [learningSessions.userId],
     references: [users.id],
   }),
+  category: one(categories, {
+    fields: [learningSessions.categoryId],
+    references: [categories.id]
+  }),
+  path: one(learningPaths, {
+    fields: [learningSessions.pathId],
+    references: [learningPaths.id]
+  }),
+  pathStep: one(pathSteps, {
+    fields: [learningSessions.pathStepId],
+    references: [pathSteps.id]
+  })
 }));
 
 export const flashcardsRelations = relations(flashcards, ({ one }) => ({
@@ -182,3 +319,39 @@ export type InsertFlashcard = z.infer<typeof flashcardInsertSchema>;
 
 export type MCQ = typeof mcqs.$inferSelect;
 export type InsertMCQ = z.infer<typeof mcqInsertSchema>;
+
+// Category types and schemas
+export const categoryInsertSchema = createInsertSchema(categories, {
+  name: (schema) => schema.min(2, "Name must be at least 2 characters"),
+  slug: (schema) => schema.min(2, "Slug must be at least 2 characters"),
+});
+export type Category = typeof categories.$inferSelect;
+export type InsertCategory = z.infer<typeof categoryInsertSchema>;
+
+// Learning path types and schemas
+export const learningPathInsertSchema = createInsertSchema(learningPaths, {
+  name: (schema) => schema.min(2, "Name must be at least 2 characters"),
+  description: (schema) => schema.min(10, "Description must be at least 10 characters").optional(),
+});
+export type LearningPath = typeof learningPaths.$inferSelect;
+export type InsertLearningPath = z.infer<typeof learningPathInsertSchema>;
+
+// Path step types and schemas
+export const pathStepInsertSchema = createInsertSchema(pathSteps, {
+  title: (schema) => schema.min(2, "Title must be at least 2 characters"),
+  topicName: (schema) => schema.min(2, "Topic name must be at least 2 characters"),
+});
+export type PathStep = typeof pathSteps.$inferSelect;
+export type InsertPathStep = z.infer<typeof pathStepInsertSchema>;
+
+// Topic types and schemas
+export const topicInsertSchema = createInsertSchema(topics, {
+  name: (schema) => schema.min(2, "Name must be at least 2 characters"),
+});
+export type Topic = typeof topics.$inferSelect;
+export type InsertTopic = z.infer<typeof topicInsertSchema>;
+
+// Path progress types and schemas
+export const pathProgressInsertSchema = createInsertSchema(pathProgress);
+export type PathProgress = typeof pathProgress.$inferSelect;
+export type InsertPathProgress = z.infer<typeof pathProgressInsertSchema>;
