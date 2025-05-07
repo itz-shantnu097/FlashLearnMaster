@@ -142,6 +142,44 @@ export default function LearnSessionPage() {
   const updateTimer = (newTime: number) => {
     setTimeRemaining(newTime);
   };
+  
+  // Handler for saving flashcard progress for later
+  const handleSaveFlashcardsForLater = async () => {
+    try {
+      // Save progress to the database
+      await apiRequest("POST", "/api/learning/save-progress", {
+        sessionId,
+        type: "flashcards",
+        currentIndex: currentFlashcardIndex,
+        topic
+      });
+      
+      // Redirect to profile/dashboard
+      navigate("/profile");
+    } catch (error) {
+      console.error("Failed to save progress:", error);
+    }
+  };
+  
+  // Handler for saving MCQ progress for later
+  const handleSaveMCQForLater = async () => {
+    try {
+      // Save progress to the database
+      await apiRequest("POST", "/api/learning/save-progress", {
+        sessionId,
+        type: "mcq",
+        currentIndex: currentMcqIndex,
+        answers: selectedAnswers,
+        timeRemaining,
+        topic
+      });
+      
+      // Redirect to profile/dashboard
+      navigate("/profile");
+    } catch (error) {
+      console.error("Failed to save progress:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -177,6 +215,7 @@ export default function LearnSessionPage() {
             currentIndex={currentFlashcardIndex}
             topic={topic}
             onNext={handleNextFlashcard}
+            onSaveForLater={handleSaveFlashcardsForLater}
           />
         )}
         
@@ -192,6 +231,7 @@ export default function LearnSessionPage() {
                 handleSubmitAnswer(selectedAnswers[selectedAnswers.length - 1]);
               }
             }}
+            onSaveForLater={handleSaveMCQForLater}
           />
         )}
         

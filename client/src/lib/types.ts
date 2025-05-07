@@ -28,6 +28,9 @@ export interface LearningSession {
   score?: number;
   completedAt?: Date;
   createdAt: Date;
+  progressType?: string; // "flashcards" or "mcq"
+  progressIndex?: number;
+  progressData?: string; // JSON string with additional progress data
 }
 
 export interface FlashcardSet {

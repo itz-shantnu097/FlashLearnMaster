@@ -150,9 +150,10 @@ export default function ProfilePage() {
                 
                 <TabsContent value="in-progress">
                   {renderSessions(
-                    sessions?.filter(s => s.completedAt === null),
+                    sessions?.filter(s => s.completedAt === null && s.progressType !== null),
                     isLoading,
-                    handleRetakeTopic
+                    handleRetakeTopic,
+                    true
                   )}
                 </TabsContent>
               </Tabs>
@@ -167,7 +168,8 @@ export default function ProfilePage() {
 function renderSessions(
   sessions: LearningSession[] | undefined,
   isLoading: boolean,
-  handleRetakeTopic: (sessionId: string) => void
+  handleRetakeTopic: (sessionId: string) => void,
+  isInProgress: boolean = false
 ) {
   if (isLoading) {
     return (
@@ -237,7 +239,7 @@ function renderSessions(
             </div>
             
             <Button onClick={() => handleRetakeTopic(session.id)}>
-              Retake
+              {session.progressType ? 'Continue' : 'Retake'}
             </Button>
           </div>
         </div>
