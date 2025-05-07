@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Award, CheckCircle, AlertTriangle } from "lucide-react";
 import { LearningResult } from "@/lib/types";
+import ShareProgress from "@/components/ShareProgress";
 
 interface ResultsViewProps {
   results: LearningResult;
@@ -85,6 +86,15 @@ export default function ResultsView({
             </h3>
             <div className="bg-neutral-50 p-4 rounded-lg mb-6">
               <p className="text-neutral-700">{nextSteps}</p>
+            </div>
+            
+            <div className="flex items-center mb-4 justify-center">
+              <ShareProgress 
+                topic={topic}
+                score={scorePercentage}
+                completedAt={new Date().toISOString()}
+                className="w-full sm:w-auto"
+              />
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">

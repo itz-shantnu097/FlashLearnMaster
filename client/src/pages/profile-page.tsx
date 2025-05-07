@@ -348,24 +348,33 @@ function SessionItem({
     <div className="border rounded-lg p-3 sm:p-4 bg-white hover:bg-accent/5 transition-colors">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            {session.completedAt ? (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <CheckCircle size={12} />
-                <span>Completed</span>
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="flex items-center gap-1 bg-amber-100 border-amber-300 text-amber-800">
-                <Clock size={12} />
-                <span>In Progress</span>
-              </Badge>
-            )}
-            <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-              <Clock size={14} />
-              <span>
-                {session.createdAt ? format(new Date(session.createdAt), 'MMM d, yyyy') : 'Unknown date'}
-              </span>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-2">
+              {session.completedAt ? (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <CheckCircle size={12} />
+                  <span>Completed</span>
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="flex items-center gap-1 bg-amber-100 border-amber-300 text-amber-800">
+                  <Clock size={12} />
+                  <span>In Progress</span>
+                </Badge>
+              )}
+              <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
+                <Clock size={14} />
+                <span>
+                  {session.createdAt ? format(new Date(session.createdAt), 'MMM d, yyyy') : 'Unknown date'}
+                </span>
+              </div>
             </div>
+            <ShareProgress 
+              variant="icon" 
+              topic={session.topic}
+              score={session.score} 
+              completedAt={session.completedAt ? new Date(session.completedAt).toISOString() : null}
+              className="text-gray-500 hover:text-gray-700"
+            />
           </div>
           
           {session.score !== null && (
