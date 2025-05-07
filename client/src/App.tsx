@@ -14,7 +14,8 @@ import LearnSessionPage from "@/pages/learn-session-page";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={NewHome} />
+      <Route path="/learn" component={Home} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/learn/:sessionId" component={LearnSessionPage} />

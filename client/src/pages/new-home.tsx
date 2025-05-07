@@ -20,11 +20,11 @@ export default function NewHome() {
     }
     
     if (!user && !isLoading) {
-      // If not logged in, redirect to auth page
-      navigate("/auth");
+      // If not logged in, redirect to auth page with redirect back to learn page
+      navigate(`/auth?redirect=/learn?topic=${encodeURIComponent(topic)}`);
     } else {
       // If logged in, navigate to the learning page with the topic
-      navigate(`/?topic=${encodeURIComponent(topic)}`);
+      navigate(`/learn?topic=${encodeURIComponent(topic)}`);
     }
   };
 
