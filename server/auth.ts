@@ -5,19 +5,32 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { db } from "../db";
-import { users } from "@shared/schema";
+import { users, User as UserType } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 
 const PostgresSessionStore = connectPg(session);
 const scryptAsync = promisify(scrypt);
 
+// Extended user type without password
+type UserProfile = Omit<UserType, 'password'> & {
+  displayName?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+  theme?: string | null;
+  totalPoints?: number | null;
+  totalSessions?: number | null;
+  totalCompletedSessions?: number | null;
+  averageScore?: number | null;
+  currentStreak?: number | null;
+  longestStreak?: number | null;
+  joinedAt?: Date | null;
+  lastLoginAt?: Date | null;
+};
+
 declare global {
   namespace Express {
-    interface User {
-      id: number;
-      username: string;
-    }
+    interface User extends UserProfile {}
   }
 }
 
@@ -89,7 +102,23 @@ export async function setupAuth(app: Express) {
         return done(null, false);
       }
 
-      done(null, { id: user.id, username: user.username });
+      // Return selected user information - exclude password
+      done(null, {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+        theme: user.theme,
+        totalPoints: user.totalPoints,
+        totalSessions: user.totalSessions,
+        totalCompletedSessions: user.totalCompletedSessions,
+        averageScore: user.averageScore,
+        currentStreak: user.currentStreak,
+        longestStreak: user.longestStreak,
+        joinedAt: user.joinedAt,
+        lastLoginAt: user.lastLoginAt
+      });
     } catch (error) {
       done(error);
     }
@@ -97,7 +126,7 @@ export async function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { username, password } = req.body;
+      const { username, password, email, displayName } = req.body;
       
       if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required" });
@@ -112,11 +141,19 @@ export async function setupAuth(app: Express) {
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      // Create new user
+      // Create new user with extended profile
       const [user] = await db.insert(users)
         .values({
           username,
           password: await hashPassword(password),
+          email: email || null,
+          displayName: displayName || username,
+          joinedAt: new Date(),
+          totalPoints: 0,
+          totalSessions: 0,
+          totalCompletedSessions: 0,
+          currentStreak: 0,
+          longestStreak: 0,
         })
         .returning();
 
@@ -132,9 +169,14 @@ export async function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: Express.User | false, info: { message?: string }) => {
+    passport.authenticate("local", async (err: any, user: Express.User | false, info: { message?: string }) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: info?.message || "Login failed" });
+      
+      // Update last login time
+      await db.update(users)
+        .set({ lastLoginAt: new Date() })
+        .where(eq(users.id, user.id));
       
       req.login(user, (err: any) => {
         if (err) return next(err);
