@@ -33,6 +33,8 @@ export const userPreferences = pgTable("user_preferences", {
   notificationsEnabled: boolean("notifications_enabled").default(true),
   emailNotifications: boolean("email_notifications").default(true),
   sessionReminders: boolean("session_reminders").default(true),
+  weeklyDigestEnabled: boolean("weekly_digest_enabled").default(true),
+  weeklyDigestDay: integer("weekly_digest_day").default(1), // 0-6 (Sunday-Saturday)
   difficultyLevel: text("difficulty_level").default("medium"),
   colorTheme: text("color_theme").default("blue"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -183,13 +185,48 @@ export const mcqs = pgTable("mcqs", {
   correctAnswer: varchar("correct_answer", { length: 1 }).notNull(),
 });
 
+// Learning Digest tables
+export const learningDigests = pgTable("learning_digests", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  weekStartDate: timestamp("week_start_date").notNull(),
+  weekEndDate: timestamp("week_end_date").notNull(),
+  totalSessions: integer("total_sessions").default(0),
+  completedSessions: integer("completed_sessions").default(0),
+  averageScore: integer("average_score"),
+  totalTimeSpentMinutes: integer("total_time_spent_minutes").default(0),
+  topCategory: text("top_category"),
+  topPerformingTopic: text("top_performing_topic"),
+  improvementAreas: text("improvement_areas"),
+  streak: integer("streak").default(0),
+  pointsEarned: integer("points_earned").default(0),
+  sentAt: timestamp("sent_at"),
+  openedAt: timestamp("opened_at"),
+  recommendations: json("recommendations").$type<string[]>(),
+  insights: json("insights").$type<{
+    type: string;
+    title: string;
+    description: string;
+    data?: any;
+  }[]>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   learningSessions: many(learningSessions),
   preferences: many(userPreferences),
   achievements: many(userAchievements),
   authoredPaths: many(learningPaths, { relationName: "author" }),
-  pathProgress: many(pathProgress)
+  pathProgress: many(pathProgress),
+  learningDigests: many(learningDigests)
+}));
+
+export const learningDigestsRelations = relations(learningDigests, ({ one }) => ({
+  user: one(users, {
+    fields: [learningDigests.userId],
+    references: [users.id]
+  })
 }));
 
 export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
@@ -355,3 +392,5 @@ export type InsertTopic = z.infer<typeof topicInsertSchema>;
 export const pathProgressInsertSchema = createInsertSchema(pathProgress);
 export type PathProgress = typeof pathProgress.$inferSelect;
 export type InsertPathProgress = z.infer<typeof pathProgressInsertSchema>;
+
+

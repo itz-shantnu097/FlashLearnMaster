@@ -8,6 +8,13 @@ import { setupAuth } from "./auth";
 import { db } from "../db";
 import { learningSessions, flashcards, mcqs } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
+import { 
+  generateWeeklyDigestsForAllUsers, 
+  getUserLatestDigest, 
+  getUserDigests, 
+  getUserDigestForWeek,
+  markDigestAsOpened
+} from "./digestService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -252,6 +259,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching session:", error);
       return res.status(500).json({ 
         message: "Failed to fetch session",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  // Learning Digest API Routes
+  
+  // Get user's latest weekly digest
+  app.get("/api/user/digest/latest", async (req, res) => {
+    // Check if user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const latestDigest = await getUserLatestDigest(req.user.id);
+      
+      if (!latestDigest) {
+        return res.status(404).json({ 
+          message: "No learning digest found. Complete more learning sessions to generate insights."
+        });
+      }
+      
+      // Mark digest as opened if it hasn't been yet
+      if (!latestDigest.openedAt) {
+        await markDigestAsOpened(latestDigest.id);
+      }
+      
+      return res.status(200).json(latestDigest);
+    } catch (error) {
+      console.error("Error fetching latest digest:", error);
+      return res.status(500).json({ 
+        message: "Failed to fetch learning digest",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  // Get all user's digests
+  app.get("/api/user/digests", async (req, res) => {
+    // Check if user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const digests = await getUserDigests(req.user.id);
+      return res.status(200).json(digests);
+    } catch (error) {
+      console.error("Error fetching digests:", error);
+      return res.status(500).json({ 
+        message: "Failed to fetch learning digests",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  // Get digest for a specific week
+  app.get("/api/user/digest/:weekStart", async (req, res) => {
+    // Check if user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const { weekStart } = req.params;
+      const weekStartDate = new Date(weekStart);
+      
+      if (isNaN(weekStartDate.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+      
+      const digest = await getUserDigestForWeek(req.user.id, weekStartDate);
+      
+      if (!digest) {
+        return res.status(404).json({ message: "Digest not found for the specified week" });
+      }
+      
+      // Mark digest as opened if it hasn't been yet
+      if (!digest.openedAt) {
+        await markDigestAsOpened(digest.id);
+      }
+      
+      return res.status(200).json(digest);
+    } catch (error) {
+      console.error("Error fetching digest for week:", error);
+      return res.status(500).json({ 
+        message: "Failed to fetch learning digest",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  // Admin endpoint to generate weekly digests for all users (protected)
+  app.post("/api/admin/generate-digests", async (req, res) => {
+    // Check if user is authenticated and has admin privileges
+    if (!req.isAuthenticated() || req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    
+    try {
+      const result = await generateWeeklyDigestsForAllUsers();
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error("Error generating weekly digests:", error);
+      return res.status(500).json({ 
+        message: "Failed to generate weekly digests",
         error: error instanceof Error ? error.message : "Unknown error"
       });
     }
