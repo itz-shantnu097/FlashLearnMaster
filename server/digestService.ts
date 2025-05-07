@@ -1,5 +1,15 @@
 import { db } from "@db";
-import { users, learningDigests, learningSessions, categories, userPreferences } from "@shared/schema";
+import { 
+  users, 
+  learningDigests, 
+  learningSessions, 
+  categories, 
+  userPreferences, 
+  flashcards, 
+  mcqs, 
+  topics,
+  pathProgress
+} from "@shared/schema";
 import { eq, and, gte, lte, desc, count, max, avg, sql } from "drizzle-orm";
 import { subDays, startOfWeek, endOfWeek, format } from "date-fns";
 import OpenAI from "openai";
@@ -187,8 +197,8 @@ async function getUserLearningStats(
     .select({ count: count() })
     .from(learningSessions)
     .innerJoin(
-      db.select({ sessionId: sql`session_id`, count: count() }).from("flashcards").groupBy("session_id").as("fc"),
-      eq(learningSessions.id, sql`fc.session_id`)
+      flashcards,
+      eq(learningSessions.id, flashcards.sessionId)
     )
     .where(
       and(
@@ -202,8 +212,8 @@ async function getUserLearningStats(
     .select({ count: count() })
     .from(learningSessions)
     .innerJoin(
-      db.select({ sessionId: sql`session_id`, count: count() }).from("mcqs").groupBy("session_id").as("mc"),
-      eq(learningSessions.id, sql`mc.session_id`)
+      mcqs,
+      eq(learningSessions.id, mcqs.sessionId)
     )
     .where(
       and(
@@ -215,7 +225,11 @@ async function getUserLearningStats(
 
   // Generate basic improvement areas based on score (will be enhanced with AI later)
   let improvementAreas = null;
-  if (sessionsResult[0].avgScore !== null && sessionsResult[0].avgScore < 70) {
+  const avgScore = typeof sessionsResult[0].avgScore === 'string' 
+    ? parseFloat(sessionsResult[0].avgScore) 
+    : sessionsResult[0].avgScore;
+    
+  if (avgScore !== null && avgScore < 70) {
     improvementAreas = "Focus on reviewing flashcards more thoroughly before taking quizzes";
   }
 
@@ -223,15 +237,20 @@ async function getUserLearningStats(
     (flashcardCount[0]?.count || 0) * 1 + 
     (mcqCount[0]?.count || 0) * 2;
 
+  // Calculate points using safe number conversions
+  const completedCount = sessionsResult[0].completed || 0;
+  const scoreValue = avgScore || 0;
+  const pointsEarned = Math.floor(completedCount * 10 + scoreValue);
+
   return {
     totalSessions: sessionsResult[0].total || 0,
-    completedSessions: sessionsResult[0].completed || 0, 
-    avgScore: sessionsResult[0].avgScore,
+    completedSessions: completedCount, 
+    avgScore: avgScore,
     topCategory: topCategoryResult[0]?.categoryName || null,
     topPerformingTopic: topPerformingTopicResult[0]?.topic || null,
     improvementAreas,
     streak: userDetails?.currentStreak || 0,
-    pointsEarned: Math.floor(sessionsResult[0].completed * 10 + (sessionsResult[0].avgScore || 0)), // Simple formula
+    pointsEarned,
     timeSpentMinutes
   };
 }

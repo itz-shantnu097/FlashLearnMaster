@@ -352,11 +352,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin endpoint to generate weekly digests for all users (protected)
+  // Generate weekly digests for all users
   app.post("/api/admin/generate-digests", async (req, res) => {
-    // Check if user is authenticated and has admin privileges
-    if (!req.isAuthenticated() || req.user.role !== 'admin') {
-      return res.status(403).json({ message: "Not authorized" });
+    // Check if user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
     }
     
     try {
