@@ -235,6 +235,18 @@ function renderSessions(
                     <span>Score: {session.score}%</span>
                   </div>
                 )}
+                
+                {session.progressType && (
+                  <div className="flex items-center gap-1">
+                    <BookOpen size={14} />
+                    <span>
+                      {session.progressType === "flashcards" ? "Flashcards" : "Quiz"}: 
+                      {session.progressIndex !== undefined && session.progressIndex !== null ? 
+                        ` ${session.progressIndex + 1} of ${session.progressType === "flashcards" ? "10" : "5"}` : 
+                        " In Progress"}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
             

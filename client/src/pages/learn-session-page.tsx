@@ -23,6 +23,9 @@ interface SessionData {
     completedAt: string | null;
     createdAt: string;
     userId: number | null;
+    progressType?: string;
+    progressIndex?: number;
+    progressData?: string;
   };
   flashcards: Flashcard[];
   mcqs: MCQQuestion[];
@@ -49,7 +52,62 @@ export default function LearnSessionPage() {
 
   useEffect(() => {
     if (sessionData && !isLoading) {
-      setViewState("flashcard");
+      const { session } = sessionData;
+      
+      // Check if session is in progress
+      if (session.progressType && session.progressIndex !== null) {
+        // Handle in-progress session
+        if (session.progressType === "flashcards") {
+          setCurrentFlashcardIndex(session.progressIndex);
+          setViewState("flashcard");
+        } else if (session.progressType === "mcq") {
+          setCurrentMcqIndex(session.progressIndex);
+          
+          // If there's progressData, try to restore answers and timer
+          if (session.progressData) {
+            try {
+              const progressData = JSON.parse(session.progressData);
+              if (progressData.answers) {
+                setSelectedAnswers(progressData.answers);
+              }
+              if (progressData.timeRemaining) {
+                setTimeRemaining(progressData.timeRemaining);
+              }
+            } catch (e) {
+              console.error("Failed to parse progress data:", e);
+            }
+          }
+          
+          setViewState("mcq");
+        }
+      }
+      // Check if the session is completed
+      else if (session.completedAt) {
+        setViewState("results");
+      } 
+      // Otherwise start from the beginning
+      else {
+        setViewState("flashcard");
+      }
+      
+      // If the session has a score, it's completed - show results
+      if (session.score !== null) {
+        const processedMcqs = sessionData.mcqs.map(mcq => ({
+          ...mcq,
+          options: typeof mcq.options === 'string' ? JSON.parse(mcq.options as string) : mcq.options
+        }));
+        
+        // Generate results data
+        setResultsData({
+          score: session.score,
+          scorePercentage: session.score,
+          totalQuestions: processedMcqs.length,
+          correctAnswers: Math.round((session.score / 100) * processedMcqs.length),
+          strengths: "Sample strengths - this is restored session data.",
+          improvements: "Sample improvements - this is restored session data.",
+          nextSteps: "Sample next steps - this is restored session data."
+        });
+      }
     }
   }, [sessionData, isLoading]);
 
