@@ -219,10 +219,7 @@ function renderSessionsGrouped(
       <div className="text-center py-10 bg-muted/20 rounded-lg">
         <AlertCircle className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
         <h3 className="text-lg font-medium">No learning sessions found</h3>
-        <p className="text-muted-foreground mb-4">You haven't studied any topics yet.</p>
-        <Button asChild>
-          <Link href="/">Start Learning</Link>
-        </Button>
+        <p className="text-muted-foreground mb-4">You haven't studied any topics yet. Go to the home page to start learning.</p>
       </div>
     );
   }
@@ -394,7 +391,7 @@ function SessionItem({
                         ? "Pending: Flashcard Learning" 
                         : "Pending: Quiz Completion"
                     )
-                  : "Pending: Not Started"
+                  : "Pending: Continue Learning"
                 }
                 {session.progressType && session.progressIndex !== undefined && session.progressIndex !== null ? 
                   ` (${session.progressIndex + 1} of ${session.progressType === "flashcards" ? "10" : "5"})` : 
@@ -410,7 +407,7 @@ function SessionItem({
           className={`${session.progressType ? "bg-blue-600 hover:bg-blue-700" : ""} sm:self-start sm:mt-0 mt-2`}
           size="sm"
         >
-          {session.completedAt ? 'Retake' : (session.progressType ? 'Continue' : 'Start')}
+          {session.completedAt ? 'Retake' : (session.progressType ? 'Continue' : 'Resume')}
         </Button>
       </div>
     </div>
