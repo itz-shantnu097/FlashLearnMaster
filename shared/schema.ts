@@ -393,4 +393,8 @@ export const pathProgressInsertSchema = createInsertSchema(pathProgress);
 export type PathProgress = typeof pathProgress.$inferSelect;
 export type InsertPathProgress = z.infer<typeof pathProgressInsertSchema>;
 
+// Learning Digest types and schemas
+export const digestInsertSchema = createInsertSchema(learningDigests);
+export type LearningDigest = typeof learningDigests.$inferSelect;
+export type InsertLearningDigest = z.infer<typeof digestInsertSchema>;
 

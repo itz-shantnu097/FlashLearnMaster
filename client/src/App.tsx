@@ -10,6 +10,8 @@ import NewHome from "@/pages/new-home";
 import ProfilePage from "@/pages/profile-page";
 import AuthPage from "@/pages/auth-page";
 import LearnSessionPage from "@/pages/learn-session-page";
+import DigestPage from "@/pages/digest-page";
+import DigestDetailPage from "@/pages/digest-detail-page";
 
 function Router() {
   return (
@@ -19,6 +21,8 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/learn/:sessionId" component={LearnSessionPage} />
+      <ProtectedRoute path="/digest" component={DigestPage} />
+      <ProtectedRoute path="/digest/:weekStart" component={DigestDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );
