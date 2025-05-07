@@ -315,6 +315,55 @@ print(message)  # Outputs: Hello, Alice!</code></pre>
 
     // Insert MCQs
     await db.insert(schema.mcqs).values(sampleMCQs);
+    
+    // Seed a test learning digest
+    console.log("Seeding test learning digest...");
+    const testDigestExists = await db.query.learningDigests.findFirst({
+      where: (d, { eq }) => eq(d.userId, 1)
+    });
+    
+    if (!testDigestExists) {
+      await db.insert(schema.learningDigests).values({
+        userId: 1,
+        weekStartDate: new Date('2025-05-01'),
+        weekEndDate: new Date('2025-05-07'),
+        totalSessions: 5,
+        completedSessions: 3,
+        averageScore: 75,
+        totalTimeSpentMinutes: 45,
+        topCategory: 'Programming',
+        topPerformingTopic: 'Python Fundamentals',
+        streak: 3,
+        pointsEarned: 50,
+        insights: JSON.stringify([
+          {
+            type: 'performance',
+            title: 'Good Progress',
+            description: 'You\'re making steady progress in your learning journey. Keep it up!'
+          },
+          {
+            type: 'streak',
+            title: '3-Day Streak',
+            description: 'You\'ve been learning consistently for 3 days in a row!'
+          },
+          {
+            type: 'learning_pattern',
+            title: 'Topic Diversity',
+            description: 'You\'ve explored multiple programming topics. Expanding your knowledge across different areas can strengthen your overall skills.'
+          }
+        ]),
+        recommendations: JSON.stringify([
+          'Try more advanced Python concepts',
+          'Practice building a small project with Python',
+          'Explore JavaScript to complement your Python knowledge',
+          'Consider taking a course on data structures'
+        ]),
+        createdAt: new Date()
+      });
+      console.log("Created test learning digest for user ID 1");
+    } else {
+      console.log("Test learning digest already exists for user ID 1");
+    }
 
     console.log("Database seeding completed successfully!");
   } catch (error) {
