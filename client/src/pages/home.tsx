@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useRoute } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import TopicInput from "@/components/TopicInput";
@@ -9,6 +10,7 @@ import ResultsView from "@/components/ResultsView";
 import SampleDataNotice from "@/components/SampleDataNotice";
 import { apiRequest } from "@/lib/queryClient";
 import { Flashcard, MCQQuestion, LearningResult } from "@/lib/types";
+import { useAuth } from "@/hooks/use-auth";
 
 type ViewState = "topicInput" | "loading" | "flashcard" | "mcq" | "results";
 
@@ -23,8 +25,38 @@ export default function Home() {
   const [resultsData, setResultsData] = useState<LearningResult | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [usingSampleData, setUsingSampleData] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const [, navigate] = useLocation();
+  const [match, params] = useRoute("/:path*");
+  
+  // Parse URL parameters for topic
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const topicParam = urlParams.get('topic');
+    
+    if (topicParam) {
+      setTopic(decodeURIComponent(topicParam));
+      
+      // If user is authenticated, start learning immediately
+      if (user && !isAuthLoading) {
+        handleTopicSubmit(decodeURIComponent(topicParam));
+      } else if (!isAuthLoading) {
+        // If not authenticated, redirect to auth page
+        navigate('/auth');
+      }
+    }
+  }, [user, isAuthLoading]);
 
   const handleTopicSubmit = async (inputTopic: string) => {
+    // Check if user is authenticated
+    if (!user && !isAuthLoading) {
+      // If not logged in, redirect to auth page with topic as parameter to return later
+      navigate(`/auth?redirect=/?topic=${encodeURIComponent(inputTopic)}`);
+      return;
+    }
+    
     setTopic(inputTopic);
     setViewState("loading");
     
@@ -35,6 +67,7 @@ export default function Home() {
       setFlashcards(data.flashcards);
       setMcqs(data.mcqs);
       setUsingSampleData(!!data.usingSampleData); // Set the flag based on API response
+      setSessionId(data.sessionId || null); // Store the session ID
       setCurrentFlashcardIndex(0);
       setViewState("flashcard");
     } catch (error) {
@@ -71,6 +104,7 @@ export default function Home() {
           topic,
           mcqs,
           selectedAnswers: newSelectedAnswers,
+          sessionId,  // Pass the session ID
           usingSampleData  // Pass the flag to the API
         });
         
@@ -89,6 +123,7 @@ export default function Home() {
     setMcqs([]);
     setSelectedAnswers([]);
     setResultsData(null);
+    setSessionId(null); // Reset session ID
     setViewState("topicInput");
   };
 
@@ -102,6 +137,7 @@ export default function Home() {
       setFlashcards(data.flashcards);
       setMcqs(data.mcqs);
       setUsingSampleData(!!data.usingSampleData); // Update sample data flag
+      setSessionId(data.sessionId || null); // Store the session ID
       setCurrentFlashcardIndex(0);
       setSelectedAnswers([]);
       setViewState("flashcard");

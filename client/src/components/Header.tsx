@@ -52,11 +52,9 @@ export default function Header() {
             </DropdownMenu>
           ) : (
             <Button asChild variant="outline" className="flex items-center gap-2">
-              <Link href="/auth">
-                <a>
-                  <LogIn size={16} />
-                  <span>Login</span>
-                </a>
+              <Link href="/auth" className="flex items-center gap-2">
+                <LogIn size={16} />
+                <span>Login</span>
               </Link>
             </Button>
           )}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { BookOpen } from "lucide-react";
 
 export default function AuthPage() {
@@ -15,10 +15,20 @@ export default function AuthPage() {
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [registerForm, setRegisterForm] = useState({ username: "", password: "", confirmPassword: "" });
   const { toast } = useToast();
+  const [redirectPath, setRedirectPath] = useState<string>("/");
 
-  // Redirect to home if already logged in
+  // Get redirect parameter from URL if present
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect');
+    if (redirect) {
+      setRedirectPath(redirect);
+    }
+  }, []);
+
+  // Redirect to the specified path or home if already logged in
   if (user) {
-    return <Redirect to="/" />;
+    return <Redirect to={redirectPath} />;
   }
 
   const handleLoginSubmit = (e: React.FormEvent) => {

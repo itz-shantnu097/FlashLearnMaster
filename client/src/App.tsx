@@ -6,6 +6,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import NewHome from "@/pages/new-home";
 import ProfilePage from "@/pages/profile-page";
 import AuthPage from "@/pages/auth-page";
 import LearnSessionPage from "@/pages/learn-session-page";
