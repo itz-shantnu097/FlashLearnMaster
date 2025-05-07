@@ -162,8 +162,15 @@ export default function ProfilePage() {
                 </TabsContent>
                 
                 <TabsContent value="in-progress">
+                  {/* Add debugging in the browser console */}
+                  {console.log("All sessions:", sessions)}
+                  {console.log("In progress sessions:", sessions?.filter(s => s.completedAt === null && s.progressType))}
                   {renderSessions(
-                    sessions?.filter(s => s.completedAt === null && s.progressType !== null),
+                    sessions?.filter(s => {
+                      // Log each session for debugging
+                      console.log("Session:", s.id, "topic:", s.topic, "progressType:", s.progressType);
+                      return s.completedAt === null && s.progressType;
+                    }),
                     isLoading,
                     handleRetakeTopic,
                     true
@@ -250,15 +257,18 @@ function renderSessions(
                 )}
                 
                 {session.progressType && (
-                  <div className="flex items-center gap-1">
-                    <BookOpen size={14} />
+                  <div className="flex items-center gap-1 mt-1 px-3 py-1.5 rounded-md bg-amber-50 border border-amber-200">
+                    {session.progressType === "flashcards" 
+                      ? <BookOpen size={14} className="text-amber-700" />
+                      : <CheckCircle size={14} className="text-amber-700" />
+                    }
                     <span className="font-medium text-amber-700">
                       {session.progressType === "flashcards" 
                         ? "Pending: Flashcard Learning" 
-                        : "Pending: Quiz Completion"}: 
+                        : "Pending: Quiz Completion"}
                       {session.progressIndex !== undefined && session.progressIndex !== null ? 
-                        ` ${session.progressIndex + 1} of ${session.progressType === "flashcards" ? "10" : "5"}` : 
-                        " In Progress"}
+                        ` (${session.progressIndex + 1} of ${session.progressType === "flashcards" ? "10" : "5"})` : 
+                        " (In Progress)"}
                     </span>
                   </div>
                 )}
