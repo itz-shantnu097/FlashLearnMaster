@@ -4,8 +4,15 @@ import { storage } from "./storage";
 import { generateFlashcards, generateMCQs, generateLearningResults } from "./openai";
 import { getSampleFlashcards, getSampleMCQs, getSampleLearningResults } from "./sampleData";
 import { v4 as uuidv4 } from "uuid";
+import { setupAuth } from "./auth";
+import { db } from "../db";
+import { learningSessions, flashcards, mcqs } from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  await setupAuth(app);
+  
   // API routes
   app.post("/api/learning/generate", async (req, res) => {
     try {
@@ -48,6 +55,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a learning session
       const sessionId = await storage.createLearningSession(topic);
 
+      // If user is authenticated, associate this session with them
+      if (req.isAuthenticated() && req.user?.id) {
+        try {
+          await db.update(learningSessions)
+            .set({ userId: req.user.id })
+            .where(eq(learningSessions.id, sessionId));
+        } catch (error) {
+          console.error("Error associating session with user:", error);
+        }
+      }
+
       // Store flashcards and MCQs
       await Promise.all([
         storage.saveFlashcards(sessionId, flashcards),
@@ -57,6 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(200).json({
         flashcards,
         mcqs,
+        sessionId,
         usingSampleData
       });
     } catch (error) {
@@ -101,9 +120,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         results = getSampleLearningResults(mcqs.length, correctAnswers);
       }
       
-      // Update session with score
-      if (req.body.sessionId) {
-        await storage.updateSessionScore(req.body.sessionId, results.score);
+      // Get session ID from request
+      const sessionId = req.body.sessionId;
+      
+      // Update session with score and link to user if authenticated
+      if (sessionId) {
+        await storage.updateSessionScore(sessionId, results.score);
+        
+        // If user is authenticated, associate this session with them
+        if (req.isAuthenticated() && req.user?.id) {
+          try {
+            await db.update(learningSessions)
+              .set({ userId: req.user.id, completedAt: new Date() })
+              .where(eq(learningSessions.id, sessionId));
+          } catch (error) {
+            console.error("Error associating session with user:", error);
+          }
+        }
       }
 
       return res.status(200).json(results);
@@ -111,6 +144,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error generating learning results:", error);
       return res.status(500).json({ 
         message: "Failed to generate learning results",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  // Get user's learning history
+  app.get("/api/user/history", async (req, res) => {
+    // Check if user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      // Get all learning sessions for the current user
+      const userSessions = await db.query.learningSessions.findMany({
+        where: eq(learningSessions.userId, req.user.id),
+        orderBy: [desc(learningSessions.createdAt)],
+      });
+      
+      return res.status(200).json(userSessions);
+    } catch (error) {
+      console.error("Error fetching user history:", error);
+      return res.status(500).json({ 
+        message: "Failed to fetch learning history",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  // Get a specific learning session with its flashcards and MCQs
+  app.get("/api/sessions/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      
+      // Get the session
+      const session = await db.query.learningSessions.findFirst({
+        where: eq(learningSessions.id, sessionId),
+      });
+      
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      
+      // Check if user is authorized to access this session
+      if (session.userId && req.user?.id !== session.userId && req.isAuthenticated()) {
+        return res.status(403).json({ message: "Not authorized to access this session" });
+      }
+      
+      // Get flashcards and MCQs for this session
+      const [sessionFlashcards, sessionMCQs] = await Promise.all([
+        db.query.flashcards.findMany({
+          where: eq(flashcards.sessionId, sessionId),
+        }),
+        db.query.mcqs.findMany({
+          where: eq(mcqs.sessionId, sessionId),
+        }),
+      ]);
+      
+      return res.status(200).json({
+        session,
+        flashcards: sessionFlashcards,
+        mcqs: sessionMCQs,
+      });
+    } catch (error) {
+      console.error("Error fetching session:", error);
+      return res.status(500).json({ 
+        message: "Failed to fetch session",
         error: error instanceof Error ? error.message : "Unknown error"
       });
     }
