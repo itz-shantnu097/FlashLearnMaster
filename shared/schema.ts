@@ -26,6 +26,10 @@ export const learningSessions = pgTable("learning_sessions", {
   score: integer("score"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  // Fields for tracking in-progress learning sessions
+  progressType: varchar("progress_type", { length: 20 }), // "flashcards" or "mcq"
+  progressIndex: integer("progress_index"), // Current flashcard or MCQ index
+  progressData: text("progress_data"), // JSON string with additional progress data
 });
 
 // Flashcards table

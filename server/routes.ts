@@ -173,6 +173,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Save learning progress for a session
+  app.post("/api/learning/save-progress", async (req, res) => {
+    // Check if user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const { sessionId, type, currentIndex, topic, answers, timeRemaining } = req.body;
+      
+      if (!sessionId || !type) {
+        return res.status(400).json({ message: "Session ID and type are required" });
+      }
+      
+      // Update session with progress details
+      await db.update(learningSessions)
+        .set({ 
+          userId: req.user.id,
+          progressType: type,
+          progressIndex: currentIndex,
+          progressData: JSON.stringify({ 
+            answers, 
+            timeRemaining,
+            lastUpdated: new Date().toISOString()
+          })
+        })
+        .where(eq(learningSessions.id, sessionId));
+      
+      return res.status(200).json({ 
+        message: "Progress saved successfully",
+        sessionId
+      });
+    } catch (error) {
+      console.error("Error saving learning progress:", error);
+      return res.status(500).json({ 
+        message: "Failed to save progress",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
   // Get a specific learning session with its flashcards and MCQs
   app.get("/api/sessions/:sessionId", async (req, res) => {
     try {

@@ -217,6 +217,7 @@ export default function Home() {
             currentIndex={currentFlashcardIndex}
             topic={topic}
             onNext={handleNextFlashcard}
+            onSaveForLater={handleSaveFlashcardsForLater}
           />
         )}
         
@@ -232,6 +233,7 @@ export default function Home() {
                 handleSubmitAnswer(selectedAnswers[selectedAnswers.length - 1]);
               }
             }}
+            onSaveForLater={handleSaveMCQForLater}
           />
         )}
         
