@@ -6,6 +6,7 @@ import LoadingView from "@/components/LoadingView";
 import FlashcardView from "@/components/FlashcardView";
 import MCQView from "@/components/MCQView";
 import ResultsView from "@/components/ResultsView";
+import SampleDataNotice from "@/components/SampleDataNotice";
 import { apiRequest } from "@/lib/queryClient";
 import { Flashcard, MCQQuestion, LearningResult } from "@/lib/types";
 
@@ -100,6 +101,7 @@ export default function Home() {
       
       setFlashcards(data.flashcards);
       setMcqs(data.mcqs);
+      setUsingSampleData(!!data.usingSampleData); // Update sample data flag
       setCurrentFlashcardIndex(0);
       setSelectedAnswers([]);
       setViewState("flashcard");
@@ -118,6 +120,11 @@ export default function Home() {
       <Header />
       
       <main className="flex-grow flex flex-col items-center justify-center py-8 px-4 sm:px-6">
+        {/* Sample data notice - show on all screens except loading and topic input */}
+        {viewState !== "loading" && viewState !== "topicInput" && (
+          <SampleDataNotice isVisible={usingSampleData} />
+        )}
+        
         {viewState === "topicInput" && (
           <TopicInput onSubmit={handleTopicSubmit} initialTopic={topic} />
         )}
